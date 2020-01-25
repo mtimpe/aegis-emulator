@@ -4,7 +4,14 @@
 
 ## Advanced Emulation for Giant Impact Simulations
 
-&AElig;GIS is a pipeline to construct a set of optimized emulators for pairwise collisions 
-between planetary-sized bodies. It uses automated machine learning to choose the best 
-emulation method and architecture for the quantity of interest. Instead of simply providing 
-a pre-trained emulator, we provide this pipeline to facilitate emulation from alternate datasets.
+&AElig;GIS is a machine learning pipeline for creating optimized regression 
+models (i.e., emulators) that can predict the outcome of collisions between
+planets. Each model predicts a specific post-impact property of the collision.
+
+The data comes from 10,700 smoothed-particle hydrodynamics (SPH) simulations
+of pairwise collisions between rotating, differentiated planets.
+
+The collision simulations and associated machine learning pipeline are from
+Timpe et al. 2020 (in review). The simulation data is publicly available on the
+[Dryad open research repository](https://doi.org/10.5061/dryad.j6q573n94 "Dryad repository").
+
