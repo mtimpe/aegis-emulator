@@ -30,7 +30,6 @@ def correlations(df, y_true, y_pred, figname, metrics):
     y_pred = np.array(new_preds)
     test_colors = np.array(new_colors)
 
-    zero = not zero
 
     vmin = min(min(y_true), min(y_pred))
     vmax = max(max(y_true), max(y_pred))

@@ -130,7 +130,7 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
     if (tss > 2000) and (method == "gp"):
 
         # Check if model exists for GP with TSS=2000
-        gp_pkl = "{}/{}/gp/2000/best/hpo_best.pkl".format(output_root, target)
+        gp_pkl = "{}/{}/gp/2000/best/best.pkl".format(output_root, target)
 
         if isfile(gp_pkl):
 
@@ -164,7 +164,7 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
                  external_y_scaler=ds.y_scaler)
 
 
-    print('\n\nEvaluating model')
+    print('\n\nEvaluating assuming perfect nan classification:')
 
     print('\n\tx: {}'.format(len(dt.scaled_x)))
     print('\ty: {}'.format(len(dt.scaled_y)))
@@ -174,24 +174,26 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
     metrics_nonan = emu._regression_metrics(y_true_nonan, y_pred_nonan)
 
     report_metrics(metrics_nonan)
-    append_metrics('no-nan', metrics_nonan, metrics_file)
+    append_metrics('nonan', metrics_nonan, metrics_file)
 
 
-    results_file = '{}/results_pnc.csv'.format(output_folder)
+    results_file = '{}/results_nonan.csv'.format(output_folder)
 
     save_results(dt.x, y_true_nonan, y_pred_nonan, results_file,
                  dt.collision_ids, target, method, tss, scaler, hpo_evals,
                  use_null)
 
 
-    figure_name = '{}/correlation_pnc.png'.format(output_folder)
+    figure_name = '{}/correlation_nonan.png'.format(output_folder)
 
     correlations(dt.x, y_true_nonan, y_pred_nonan, figure_name, metrics_nonan)
 
 
-    print('\n\nEvaluating model with perfect null pre-classification:')
+    ############################################################################
 
-    ids_pzc, x_input, m_tot, j_tot, y_true_pzc, y_pred_pzc = perfect_null_classifier(
+    print('\n\nEvaluating model assuming perfect null classification:')
+
+    ids_pzc, x_input, m_tot, j_tot, y_true_nonan_nonull, y_pred_nonan_nonull = perfect_null_classifier(
             dt.collision_ids, dt.x.values, dt.x.mtotal, dt.J_tot,
             y_true_nonan, y_pred_nonan, target)
 
@@ -202,13 +204,14 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
     dx_pzc['collision_id'] = ids_pzc
 
     # Evaluate regressor with pre-classification
-    metrics_pzc = emu._regression_metrics(y_true_pzc, y_pred_pzc)
+    metrics_nonan_nonull = emu._regression_metrics(y_true_nonan_nonull,
+                                                   y_pred_nonan_nonull)
 
     print('\n\tx: {}'.format(len(x_input)))
-    print('\ty: {}'.format(len(y_true_pzc)))
+    print('\ty: {}'.format(len(y_true_nonan_nonull)))
 
-    report_metrics(metrics_pzc)
-    append_metrics('perect-zero-classifier', metrics_pzc, metrics_file)
+    report_metrics(metrics_nonan_nonull)
+    append_metrics('nonan_nonull', metrics_nonan_nonull, metrics_file)
 
 
     results_file = '{}/results_pnc_pzc.csv'.format(output_folder)
@@ -217,23 +220,26 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
                  ids_pzc, target, method, tss, scaler, hpo_evals, use_null)
 
 
-    figure_name = '{}/correlation_nan_null.png'.format(output_folder)
+    figure_name = '{}/correlation_nonan_nonull.png'.format(output_folder)
 
-    correlations(x_input, y_true_pzc, y_pred_pzc, figure_name, metrics_pzc)
+    correlations(x_input, y_true_nonan_nonull, y_pred_nonan_nonull, figure_name,
+                 metrics_nonan_nonull)
+
 
     ############################################################################
 
-    print('\nEvaluating model with physics enforcement:')
+    print('\n\nEvaluating model with physics enforcement:')
 
-    y_pred_phys = enforce_physics(y_pred_pzc, y_true_pzc, m_tot, j_tot, target)
+    y_pred_phys = enforce_physics(y_true_nonan_nonull, y_pred_nonan_nonull,
+                                  m_tot, j_tot, target)
 
     print('\n\tx:      {}'.format(len(m_tot)))
-    print('\ty_true: {}'.format(len(y_true_pzc)))
-    print('\ty_pred: {}'.format(len(y_pred_pzc)))
+    print('\ty_true: {}'.format(len(y_true_nonan_nonull)))
+    print('\ty_pred: {}'.format(len(y_pred_nonan_nonull)))
     print('\ty_phys: {}'.format(len(y_pred_phys)))
 
     # Evaluate regressor with physics enforcement
-    metrics_phys = emu._regression_metrics(y_true_pzc, y_pred_phys)
+    metrics_phys = emu._regression_metrics(y_true_nonan_nonull, y_pred_phys)
 
     report_metrics(metrics_phys)
     append_metrics('physics', metrics_phys, metrics_file)
@@ -263,7 +269,7 @@ def append_metrics(stage, metrics, filepath):
                 metrics['r2'], metrics['rmse'], metrics['mae'], metrics['mbe']))
 
 
-def enforce_physics(y_pred, y_true, m_tot, j_tot, target):
+def enforce_physics(y_true, y_pred, m_tot, j_tot, target):
 
     if target in ['lr_mass', 'slr_mass', 'debris_mass']:
 
@@ -312,7 +318,7 @@ def enforce_physics(y_pred, y_true, m_tot, j_tot, target):
 
         y_new.append(yp)
 
-    print("\nEnforcements: {}".format(n_enf))
+    print("\n\tEnforcements: {}".format(n_enf))
 
     return y_new
 
@@ -327,13 +333,6 @@ def perfect_null_classifier(collision_ids, x_vec, m_tot, j_tot, y_test, y_pred,
     new_j    = []
     new_true = []
     new_pred = []
-
-    print('\n\tIDs:      {}'.format(len(collision_ids)))
-    print('\tx:        {}'.format(len(x_vec)))
-    print('\tm_tot:    {}'.format(len(m_tot)))
-    print('\tj_tot:    {}'.format(len(j_tot)))
-    print('\ty_test:   {}'.format(len(y_test)))
-    print('\ty_pred:   {}'.format(len(y_pred)))
 
     z = 0
 
@@ -365,12 +364,6 @@ def trained_nan_classifier(collision_ids, x_vec, y_test, y_pred, lr_zero,
     new_true = []
     new_pred = []
 
-    print('\n\tIDs:      {}'.format(len(collision_ids)))
-    print('\tx:        {}'.format(len(x_vec)))
-    print('\ty_test:   {}'.format(len(y_test)))
-    print('\ty_pred:   {}'.format(len(y_pred)))
-    print('\tlr_zero:  {}'.format(len(lr_zero)))
-    print('\tslr_zero: {}'.format(len(slr_zero)))
 
     for cid, x, yt, yp, lr, slr in zip(collision_ids, x_vec, y_test, y_pred,
                                        lr_zero, slr_zero):
@@ -467,7 +460,8 @@ if __name__ == "__main__":
             type=str, help="Parameter to emulate (e.g., lr_mass).")
 
     parser.add_argument("-tss", "--training_set_size",
-            type=int, help="Training set size (TSS).")
+            type=int, default=10000,
+            help="Training set size (TSS).")
 
     parser.add_argument("-hs", "--hpo_steps",
             type=int, default=100,
@@ -493,8 +487,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    if args.tss > tss_max[args.lhs]:
-        args.tss = tss_max[args.lhs]
+    if args.training_set_size > tss_max["12D_LHS10K"]:
+        args.training_set_size = tss_max["12D_LHS10K"]
 
 
     if args.method not in ['gp', 'xgb', 'mlp']:

@@ -406,7 +406,7 @@ class Regressor:
 
         ext = cv_model.split('.')[-1]
 
-        best_arch = '{}/best/hpo_best.{}'.format(self.output_dir, ext)
+        best_arch = '{}/best/best.{}'.format(self.output_dir, ext)
 
 
         r2str = ','.join([str(x) for x in r2_cv])

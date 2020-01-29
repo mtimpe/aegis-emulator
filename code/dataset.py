@@ -62,7 +62,7 @@ class Dataset:
 
 
     def get_kth_fold(self, k=0):
-         """Extract the k-th fold from the training set."""
+        """Extract the k-th fold from the training set."""
 
         folds = list(self.kf.split(self.scaled_x))
 
@@ -113,11 +113,7 @@ class Dataset:
 
         if self.external_x_scaler:
 
-            print("\n\tUsing existing scaler for x-data")
-
             x_scaler = self.external_x_scaler
-
-            print("\n\tScaler: {}".format(x_scaler))
 
             scaled_X = x_scaler.transform(X)
             scaled_X = pd.DataFrame(scaled_X, columns=X.columns)
@@ -126,11 +122,7 @@ class Dataset:
 
         elif scaler[self.scaling_method]:
 
-            print("\n\tInstantiating new scaler for x-data")
-
             x_scaler = StandardScaler()
-
-            print("\n\tScaler: {}".format(x_scaler))
 
             scaled_X = x_scaler.fit_transform(X)
             scaled_X = pd.DataFrame(scaled_X, columns=X.columns)
@@ -144,11 +136,7 @@ class Dataset:
 
         if self.external_y_scaler:
 
-            print("\n\tUsing existing scaler for y-data")
-
             y_scaler = self.external_y_scaler
-
-            print("\n\tScaler: {}".format(y_scaler))
 
             scaled_Y = y_scaler.transform(Y.values.reshape(-1, 1))
             scaled_Y = pd.Series(data=np.squeeze(scaled_Y), name=Y.name)
@@ -157,11 +145,7 @@ class Dataset:
 
         elif scaler[self.scaling_method]:
 
-            print("\n\tInstantiating new scaler for y-data")
-
             y_scaler = StandardScaler()
-
-            print("\n\tScaler: {}".format(y_scaler))
 
             scaled_Y = y_scaler.fit_transform(Y.values.reshape(-1, 1))
             scaled_Y = pd.Series(data=np.squeeze(scaled_Y), name=Y.name)
@@ -184,7 +168,7 @@ class Dataset:
 
         features.append(self.target)
         features.append('collision_id')
-        features.append('sys_angular_momentum_init')
+        features.append('total_angular_momentum')
 
 
         if self.cascade and self.target == 'slr_mass':
@@ -201,9 +185,9 @@ class Dataset:
 
 
         if self.tss < tss_max[self.lhs]:
-            csv = '../data/csv/{}_TSS_{:05d}.csv'.format(self.lhs, self.tss)
+            csv = '../datasets/{}_TSS_{:05d}.csv'.format(self.lhs, self.tss)
         else:
-            csv = '../data/csv/{}.csv'.format(self.lhs)
+            csv = '../datasets/{}.csv'.format(self.lhs)
 
 
         try:
@@ -245,7 +229,7 @@ class Dataset:
 
         # Extract collision IDs, masks
         self.collision_ids = raw_dataset.pop('collision_id')
-        self.J_tot         = raw_dataset.pop('sys_angular_momentum_init')
+        self.J_tot         = raw_dataset.pop('total_angular_momentum')
 
 
         # Reset columns names
@@ -259,7 +243,7 @@ class Dataset:
 
         code_dir = Path(__file__).parent.absolute()
 
-        csv_dir = "{}/data/csv".format(Path(code_dir).parents[0])
+        csv_dir = "{}/datasets".format(Path(code_dir).parents[0])
 
         csv_file = '{}/{}.csv'.format(csv_dir, self.lhs)
 
@@ -267,7 +251,7 @@ class Dataset:
 
         subset = df.sample(self.tss, random_state=42)
 
-        new_file = '../data/csv/{}_TSS_{:05d}.csv'.format(self.lhs, self.tss)
+        new_file = '{}/{}_TSS_{:05d}.csv'.format(csv_dir, self.lhs, self.tss)
 
         subset.to_csv(new_file, sep=',', index=False)
 
