@@ -1,3 +1,7 @@
+# Custom
+models/classifiers
+models/regressors
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
