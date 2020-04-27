@@ -8,11 +8,12 @@ tf.compat.v1.set_random_seed(42)
 #print(tf.__version__)
 
 from base import Classifier, Regressor
+from contextlib import redirect_stdout
 from hyperopt import hp
 from keras import backend as K
 from os import environ
 import pickle
-from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model, save_model
 from tensorflow.keras import layers, Sequential
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.initializers import glorot_uniform
@@ -264,19 +265,27 @@ class MLPRegressor(Regressor):
 
 
     @staticmethod
-    def _load_model(h5_file):
+    def _load_model(tf_path):
 
-        return load_model(h5_file)
+        return load_model(tf_path)
 
 
     @staticmethod
     def _save_model(model, space, filename):
 
-        h5_file = '{}.h5'.format(filename)
+        tf_path = '{}'.format(filename)
 
-        model.save(h5_file)
+        model.save(tf_path, save_format='tf')
 
-        return h5_file
+        tf_file = '{}/saved_model.pb'.format(tf_path)
+
+        sum_file = '{}/summary.txt'.format(tf_path)
+
+        with open(sum_file, 'w') as f:
+            with redirect_stdout(f):
+                model.summary()
+
+        return tf_path
 
 
     def _create_best(self):
@@ -335,7 +344,7 @@ class MLPRegressor(Regressor):
             patience=10
         )
 
-        
+
         model.fit(self.data.scaled_x, self.data.y,
             epochs=1000,
             shuffle=False,

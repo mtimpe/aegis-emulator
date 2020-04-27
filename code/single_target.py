@@ -5,7 +5,9 @@ np.random.seed(42)
 
 import argparse
 from dataset import Dataset
+from datetime import date
 import joblib
+import json
 from os import makedirs
 from os.path import exists, isfile
 import pandas as pd
@@ -110,6 +112,22 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
     # Save data scalers
     joblib.dump(ds.x_scaler, "{}/x_scaler.save".format(output_folder))
     joblib.dump(ds.y_scaler, "{}/y_scaler.save".format(output_folder))
+
+    # Save model metadata and scaler parameters to JSON file that can be
+    # accessed by C++ code.
+    scaler_dict = ds.scaler_to_dict()
+
+    today = date.today()
+
+    scaler_dict["model"]["type"] = method
+    scaler_dict["model"]["trained"] = today.strftime("%d/%m/%Y")
+
+    scaler_json = json.dumps(scaler_dict)
+
+    jsonf = "{}/scaler.json".format(output_folder)
+
+    with open(jsonf, 'w') as f:
+        json.dump(scaler_json, f)
 
 
     # Initialize untrained emulator

@@ -5,7 +5,7 @@ np.random.seed(42)
 from hyperopt import hp, fmin, tpe, STATUS_OK, Trials
 import pandas as pd
 import pickle
-from shutil import move
+from shutil import move, rmtree
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.metrics import accuracy_score, average_precision_score, f1_score
@@ -404,10 +404,9 @@ class Regressor:
         mean_rmse = np.mean(rmse_cv)
 
 
-        ext = cv_model.split('.')[-1]
+        ext = cv_model.split('/')[-1]
 
-        best_arch = '{}/best/best.{}'.format(self.output_dir, ext)
-
+        best_arch = '{}/best/saved_model'.format(self.output_dir)
 
         r2str = ','.join([str(x) for x in r2_cv])
 
@@ -420,6 +419,7 @@ class Regressor:
             self.best_score = mean_r2
             self.best_model = best_arch
 
+            #rmtree(best_arch)
             move(cv_model, best_arch)
 
         elif self.best_score < mean_r2:
@@ -427,6 +427,7 @@ class Regressor:
             self.best_score = mean_r2
             self.best_model = best_arch
 
+            rmtree(best_arch)
             move(cv_model, best_arch)
 
 

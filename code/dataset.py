@@ -256,3 +256,27 @@ class Dataset:
         subset.to_csv(new_file, sep=',', index=False)
 
         return subset[self.features]
+
+
+    def scaler_to_dict(self):
+
+        scaler_dict = {"model":{}, "data":{}, "features":{}, "target":{}}
+
+        scaler_dict["data"]["LHS"] = self.lhs
+        scaler_dict["data"]["TSS"] = self.tss
+        scaler_dict["data"]["train_with_zero"] = self.use_null
+        scaler_dict["data"]["scaler"] = "StandardScaler"
+
+        features = list(self.features)
+        x_mu = self.x_scaler.mean_
+        x_s = self.x_scaler.scale_
+
+        for feat, mu, s in zip(features, x_mu, x_s):
+            scaler_dict["features"][feat] = {"mu":mu, "s":s}
+
+        y_mu = self.y_scaler.mean_[0]
+        y_s = self.y_scaler.scale_[0]
+
+        scaler_dict["target"][self.target] = {"mu":y_mu, "s":y_s}
+
+        return scaler_dict
