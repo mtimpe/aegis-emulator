@@ -122,12 +122,10 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
     scaler_dict["model"]["type"] = method
     scaler_dict["model"]["trained"] = today.strftime("%d/%m/%Y")
 
-    scaler_json = json.dumps(scaler_dict)
-
     jsonf = "{}/scaler.json".format(output_folder)
 
     with open(jsonf, 'w') as f:
-        json.dump(scaler_json, f)
+        json.dump(scaler_dict, f)
 
 
     # Initialize untrained emulator
