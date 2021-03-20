@@ -29,6 +29,11 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 
+physical_devices = tf.config.experimental.list_physical_devices('GPU')
+if physical_devices:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
+
 class MLPClassifier(Classifier):
 
     def __init__(self, data, output_dir):
@@ -218,26 +223,31 @@ class MLPRegressor(Regressor):
         # Number of neurons in each layer
         layer_sizes = [int(n) for n in space['layers']['n_units_layer']]
 
-
         model = Sequential()
 
+        model.add(layers.InputLayer(input_shape=12, name='input'))
+
         for idx, n_hidden in enumerate(layer_sizes):
+
+            hl_name = "dense_{}".format(idx+1)
 
             if idx == 0:
 
                 # Input layer
                 model.add(layers.Dense(n_hidden, activation=tf.nn.relu,
-                        kernel_initializer=glorot_uniform(seed=42),
-                        input_shape=[self.n_input]))
+                          kernel_initializer=glorot_uniform(seed=42),
+                          input_shape=(self.n_input,),
+                          name=hl_name))
 
             else:
                 # Hidden layers
                 model.add(layers.Dense(n_hidden, activation=tf.nn.relu,
-                        kernel_initializer=glorot_uniform(seed=42)))
+                          kernel_initializer=glorot_uniform(seed=42),
+                          name=hl_name))
 
 
         # Output layer
-        model.add(layers.Dense(1))
+        model.add(layers.Dense(1, name='prediction'))
 
 
         model.compile(
@@ -271,11 +281,12 @@ class MLPRegressor(Regressor):
 
 
     @staticmethod
-    def _save_model(model, space, filename):
+    def _save_model(model, space, filename, final):
 
         tf_path = '{}'.format(filename)
 
-        model.save(tf_path, save_format='tf')
+        # Save full Keras model
+        model.save(tf_path, save_format='tf', include_optimizer=final)
 
         tf_file = '{}/saved_model.pb'.format(tf_path)
 
@@ -292,7 +303,6 @@ class MLPRegressor(Regressor):
         """Build multi-layer perceptron with best hyperparameter set."""
 
         space = self.best_space
-
 
         K.clear_session()
 
@@ -312,24 +322,31 @@ class MLPRegressor(Regressor):
 
         model = Sequential()
 
+        model.add(layers.InputLayer(input_shape=12, name='input'))
+
         for idx, n_hidden in enumerate(layer_sizes):
+
+            # Hidden layer names
+            hl_name = "dense_{}".format(idx+1)
 
             if idx == 0:
 
-                # Input layer
+                # First hidden layer
                 model.add(layers.Dense(n_hidden, activation=tf.nn.relu,
-                        kernel_initializer=glorot_uniform(seed=42),
-                        input_shape=[self.n_input]))
+                          kernel_initializer=glorot_uniform(seed=42),
+                          input_shape=(self.n_input,),
+                          name=hl_name))
 
             else:
 
                 # Hidden layers
                 model.add(layers.Dense(n_hidden, activation=tf.nn.relu,
-                        kernel_initializer=glorot_uniform(seed=42)))
+                          kernel_initializer=glorot_uniform(seed=42),
+                          name=hl_name))
 
 
         # Output layer
-        model.add(layers.Dense(1))
+        model.add(layers.Dense(1, name='prediction'))
 
 
         model.compile(
@@ -345,7 +362,7 @@ class MLPRegressor(Regressor):
         )
 
 
-        model.fit(self.data.scaled_x, self.data.y,
+        model.fit(self.data.scaled_x, self.data.scaled_y,
             epochs=1000,
             shuffle=False,
             validation_split = 0.2,

@@ -371,7 +371,7 @@ class Regressor:
             model_file = '{}/hpo/hpo_{:03d}_{}'.format(
                 self.output_dir, self.hpo_iter, k+1)
 
-            model_path = self._save_model(model, space, model_file)
+            model_path = self._save_model(model, space, model_file, final=False)
 
             y_pred = model.predict(x_test)
 
@@ -451,7 +451,9 @@ class Regressor:
 
     def evaluate_best(self, data):
 
-        model = self._load_model(self.best_model)
+        #model = self._load_model(self.best_model)
+
+        model = self._create_best()
 
         y_pred = model.predict(data.scaled_x)
 

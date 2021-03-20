@@ -9,11 +9,12 @@ from datetime import date
 import joblib
 import json
 from os import makedirs
-from os.path import exists, isfile
+from os.path import exists, isdir, isfile
 import pandas as pd
 from pathlib import Path
 import pickle
 from plots import correlations
+from shutil import rmtree
 from sys import exit
 
 
@@ -57,6 +58,8 @@ def make_dir_struct(root, method, target, tss):
 
     best_dir = "{}/best".format(output_dir)
 
+    if isdir(output_dir):
+        rmtree(output_dir)
 
     for folder in [hpo_dir, best_dir]:
         if not exists(folder):
@@ -166,9 +169,7 @@ def train(method, target, tss, hpo_evals, kfolds, scaler, use_null, root):
 
         print('\n\tBest mean regressor performance during HPO:')
         report_metrics(hpo_metrics)
-
         append_metrics('hpo', hpo_metrics, metrics_file)
-
 
 
     # Load test data
